@@ -1,21 +1,22 @@
 import random
 import string
 
-import stripe
+import paypal
+from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import redirect
+from django.shortcuts import redirect, reverse
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.generic import ListView, DetailView, View
 
-from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
-from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
+from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm, ReviewForm, SupportTicketForm
+from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile, CATEGORY_CHOICES, Wishlist, WishlistItem, SupportTicket
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+paypal.api_key = settings.PAYPAL_SECRET_KEY
 
 
 def create_ref_code():
@@ -36,6 +37,28 @@ def is_valid_form(values):
             valid = False
     return valid
 
+
+def search(request):
+    query = request.GET.get('query', '')
+    results = Item.objects.filter(title__icontains=query) if query else []
+    context = {
+        'results': results,
+        'query': query
+    }
+    return render(request, 'search.html', context) 
+
+def add_to_wishlist(self, user):
+        """Add this item to the user's wishlist."""
+        wishlist, created = Wishlist.objects.get_or_create(user=user)
+        WishlistItem.objects.get_or_create(wishlist=wishlist, item=self)
+
+def remove_from_wishlist(self, user):
+    """Remove this item from the user's wishlist."""
+    wishlist = Wishlist.objects.filter(user=user).first()
+    if wishlist:
+        wishlist_item = WishlistItem.objects.filter(wishlist=wishlist, item=self).first()
+        if wishlist_item:
+            wishlist_item.delete()
 
 class CheckoutView(View):
     def get(self, *args, **kwargs):
@@ -347,9 +370,22 @@ class PaymentView(View):
 
 class HomeView(ListView):
     model = Item
-    paginate_by = 10
+    paginate_by = 8
     template_name = "home.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category_choices'] = CATEGORY_CHOICES  # Add CATEGORY_CHOICES to context
+        return context
+    
+class CategoryView(ListView):
+    model = Item
+    template_name = "category.html"  # Create this template
+    context_object_name = 'items'  # This will be the context variable for the items
+
+    def get_queryset(self):
+        category = self.kwargs['category']  # Get the category from the URL
+        return Item.objects.filter(category=category)  # Filter items by category
 
 class OrderSummaryView(LoginRequiredMixin, View):
     def get(self, *args, **kwargs):
@@ -366,7 +402,54 @@ class OrderSummaryView(LoginRequiredMixin, View):
 
 class ItemDetailView(DetailView):
     model = Item
-    template_name = "product.html"
+    template_name = "products.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reviews'] = self.object.reviews.all()  # Get all reviews for the item
+        context['review_form'] = ReviewForm()  # Initialize the review form
+        context['support_ticket_form'] = SupportTicketForm()  # Initialize the support ticket form
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()  # Get the current product object
+        
+        # Handle review submission
+        if 'review' in request.POST:
+            return self.handle_review_submission(request)
+
+        # Handle support ticket submission
+        if 'support_ticket' in request.POST:
+            return self.handle_support_ticket_submission(request)
+
+        # If no valid form was submitted, re-render the page with the forms
+        return self.get(request, *args, **kwargs)
+
+    def handle_review_submission(self, request):
+        review_form = ReviewForm(request.POST)
+        if review_form.is_valid():
+            review = review_form.save(commit=False)
+            review.item = self.object  # Associate with the product
+            review.user = request.user  # Associate with the current user
+            review.save()
+            messages.success(request, "Your review has been submitted successfully.")
+            return redirect('core:product', slug=self.object.slug)  # Redirect after saving
+        else:
+            messages.error(request, "There was an error submitting your review. Please correct the errors below.")
+            return self.get(request)  # Re-render with the invalid form
+
+    def handle_support_ticket_submission(self, request):
+        support_ticket_form = SupportTicketForm(request.POST)
+        if support_ticket_form.is_valid():
+            support_ticket = support_ticket_form.save(commit=False)
+            support_ticket.item = self.object  # Associate with the product
+            support_ticket.user = request.user  # Associate with the current user
+            support_ticket.save()
+            messages.success(request, "Your support ticket has been submitted successfully.")
+            return redirect('core:product', slug=self.object.slug)  # Redirect after saving
+        else:
+            messages.error(request, "There was an error submitting your support ticket. Please correct the errors below.")
+            return self.get(request)  # Re-render with the invalid form
 
 
 @login_required
@@ -455,7 +538,7 @@ def remove_single_item_from_cart(request, slug):
             return redirect("core:product", slug=slug)
     else:
         messages.info(request, "You do not have an active order")
-        return redirect("core:product", slug=slug)
+        return redirect("core:products", slug=slug)
 
 
 def get_coupon(request, code):
@@ -517,3 +600,105 @@ class RequestRefundView(View):
             except ObjectDoesNotExist:
                 messages.info(self.request, "This order does not exist.")
                 return redirect("core:request-refund")
+
+
+class SupportTicketView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            messages.warning(request, "You need to log in to view this page.")
+            return redirect('core:home')  # Redirect to the homepage or login page
+
+        form = SupportTicketForm()
+        return render(request, 'support_ticket.html', {'form': form})
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            messages.warning(request, "You need to log in to submit a support ticket.")
+            return redirect('core:home')  # Redirect to the homepage or login page
+        
+        form = SupportTicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.user = request.user  # Associate the ticket with the current user
+            
+            # Get the item slug from the form data
+            item_slug = request.POST.get('item_slug')
+            ticket.item = get_object_or_404(Item, slug=item_slug)  # Associate with the item
+            ticket.save()
+
+
+            # Prepare email content
+            subject = f"New Support Ticket from {ticket.user.username}"
+            message = f"""
+            You have received a new support ticket.
+
+            Subject: {ticket.subject}
+            Message: {ticket.message}
+
+            User: {ticket.user.username}
+            Email: {ticket.user.email}
+            """
+            # Send email to the support team
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                ['support-team@example.com'],  # Replace with your support team's email
+                fail_silently=False,
+            )
+
+            # Send confirmation email to the user
+            user_subject = "Support Ticket Submitted"
+            user_message = f"""
+            Hi {ticket.user.username},
+
+            Thank you for reaching out to us. Your support ticket has been submitted successfully.
+
+            Subject: {ticket.subject}
+            Message: {ticket.message}
+
+            We will get back to you shortly.
+
+            Best regards,
+            Your Company Name
+            """
+            send_mail(
+                user_subject,
+                user_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [ticket.user.email],
+                fail_silently=False,
+            )
+
+            messages.success(request, "Your support ticket has been submitted successfully. A confirmation email has been sent to you.")
+            return redirect('core:product', slug=ticket.item.slug)  # Redirect to the product page with the slug
+
+        # If the form is not valid, re-render the support ticket page with the form errors
+        messages.error(request, "There was an error submitting your support ticket. Please correct the errors below.")
+        return render(request, 'support_ticket.html', {'form': form})
+
+class WishlistView(View):
+    def get(self, request):
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+        context = {
+            'wishlist_items': wishlist.items.all()
+        }
+        return render(request, 'wishlist.html', context)
+
+class AddToWishlistView(View):
+    def post(self, request, slug):
+        item = get_object_or_404(Item, slug=slug)
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+        WishlistItem.objects.get_or_create(wishlist=wishlist, item=item)
+        messages.success(request, f"{item.title} has been added to your wishlist.")
+        return redirect('core:wishlist')
+
+class RemoveFromWishlistView(View):
+    def post(self, request, slug):
+        item = get_object_or_404(Item, slug=slug)
+        wishlist = Wishlist.objects.get(user=request.user)
+        wishlist_item = WishlistItem.objects.filter(wishlist=wishlist, item=item).first()
+        if wishlist_item:
+            wishlist_item.delete()
+            messages.success(request, f"{item.title} has been removed from your wishlist.")
+        return redirect('core:wishlist')

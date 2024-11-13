@@ -1,0 +1,69 @@
+{% extends 'base.html'%}
+
+{% block content %}
+<main>
+    <div class="container mt-12">
+        <form class="form-inline" method="GET" action="{% url 'core:search' %}">
+            <div class="md-form my-0">
+                <input class="form-control mr-sm-2" type="text" name="query" placeholder="Search" aria-label="Search" value="{{ query }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <div class="mt-4">
+            <h2>Search Results:</h2>
+            {% if results %}
+                    {% for item in results %}
+                    <section class="text-center mb-12">
+
+                        <div class="row wow fadeIn">
+                            <div class="col-lg-3 col-md-12 mb-4">
+
+                                <div class="card">
+                    
+                                <div class="view overlay">
+                                    {% comment %} <img src="{{ object.image.url }}" class="card-img-top" {% endcomment %}
+                                    <img src="{{ item.image.url }}" class="card-img-top">
+                                    <a href="{{ item.get_absolute_url }}">
+                                    <div class="mask rgba-white-slight"></div>
+                                    </a>
+                                </div>
+                    
+                                <div class="card-body text-center">
+                                    <a href="" class="grey-text">
+                                    <h5>{{ item.get_category_display }}</h5>
+                                    </a>
+                                    <h5>
+                                    <strong>
+                                        <a href="{{ item.get_absolute_url }}" class="dark-grey-text">{{ item.title }}
+                                        <span class="badge badge-pill {{ item.get_label_display }}-color">NEW</span>
+                                        </a>
+                                    </strong>
+                                    </h5>
+                    
+                                    <h4 class="font-weight-bold blue-text">
+                                    <strong>$
+                                    {% if item.discount_price %}
+                                    {{ item.discount_price }}
+                                    {% else %}
+                                    {{ item.price }}
+                                    {% endif %}
+                                    </strong>
+                                    </h4>
+                    
+                                </div>
+                    
+                                </div>
+                    
+                            </div>
+                        </div>
+                    </section>
+                    {% endfor %}
+            {% else %}
+                <p>No results found.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+</main>
+{% endblock content %}

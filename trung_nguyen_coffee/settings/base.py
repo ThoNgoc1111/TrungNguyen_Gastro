@@ -20,7 +20,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'crispy_forms',
     'django_countries',
-
+    'paypal.standard.ipn',
     'core'
 ]
 
@@ -34,7 +34,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'djecommerce.urls'
+ROOT_URLCONF = 'trung_nguyen_coffee.urls'
 
 TEMPLATES = [
     {
@@ -52,7 +52,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'djecommerce.wsgi.application'
+WSGI_APPLICATION = 'trung_nguyen_coffee.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -80,3 +80,11 @@ LOGIN_REDIRECT_URL = '/'
 # CRISPY FORMS
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.your-email-provider.com'  # e.g., smtp.gmail.com for Gmail
+EMAIL_PORT = 25  # Current Local SMTP is listening on port 25 (default)
+EMAIL_USE_TLS = False  # or EMAIL_USE_SSL = True
+EMAIL_HOST_PASSWORD = 'admin1234@'

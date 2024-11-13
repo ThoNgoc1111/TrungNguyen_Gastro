@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main>
+    <div class="container">
+        <h1>Items in Category: {{ items.first.get_category_display }}</h1>  <!-- Display the category name -->
+
+        <div class="row">
+            {% for item in items %}
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card">
+                    <div class="view overlay">
+                        <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}">
+                        <a href="{{ item.get_absolute_url }}">
+                            <div class="mask rgba-white-slight"></div>
+                        </a>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5>
+                            <strong>
+                                <a href="{{ item.get_absolute_url }}" class="dark-grey-text">{{ item.title }}</a>
+                            </strong>
+                        </h5>
+                        <h4 class="font-weight-bold blue-text">
+                            <strong>
+                                {% if item.discount_price %}
+                                    ${{ item.discount_price }}
+                                {% else%}
+                                    ${{ item.price }}
+                                {% endif %}
+                            </strong>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p>No items found in this category.</p>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock content %}

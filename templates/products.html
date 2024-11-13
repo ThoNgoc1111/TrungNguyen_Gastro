@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<main class="mt-5 pt-4">
+    <div class="container dark-grey-text mt-5">
+
+        <!-- Product Details -->
+        <div class="row wow fadeIn">
+            <div class="col-md-6 mb-4">
+                <img src="{{ object.image.url }}" class="img-fluid" alt="">
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="p-4">
+                    <div class="mb-3">
+                        <a href="">
+                            <span class="badge purple mr-1">{{ object.get_category_display }}</span>
+                        </a>
+                    </div>
+                    <p class="lead">
+                        {% if object.discount_price %}
+                        <span class="mr-1">
+                            <del>${{ object.price }}</del>
+                        </span>
+                        <span>${{ object.discount_price }}</span>
+                        {% else %}
+                        <span>${{ object.price }}</span>
+                        {% endif %}
+                    </p>
+                    <p class="lead font-weight-bold">Description</p>
+                    <b>{{ object.title }}</b>
+                    <br>
+                    <p>{{ object.description }}</p>
+                    <a href="{{ object.get_add_to_cart_url }}" class="btn btn-primary btn-md my-0 p">
+                        Add to cart
+                        <i class="fas fa-shopping-cart ml-1"></i>
+                    </a>
+                    <a href="{{ object.get_remove_from_cart_url }}" class="btn btn-danger btn-md my-0 p">
+                        Remove from cart
+                    </a>
+                    <form method="POST" action="{% url 'core:add_to_wishlist' object.slug %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-md my-0 p">
+                            <i class="fas fa-heart"></i> Add to Wishlist
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Customer Reviews -->
+        <div class="row d-flex justify-content-center wow fadeIn">
+            <div class="col-md-12 text-center">  
+                <h3>Customer Reviews</h3>
+                {% for review in reviews %}
+                    <div class="review">
+                        <strong>{{ review.user.username }}</strong> - {{ review.rating }} out of 5
+                        <p>{{ review.comment }}</p>
+                        <small>Reviewed on {{ review.timestamp }}</small>
+                    </div>
+                {% empty %}
+                    <p>No reviews yet.</p>
+                {% endfor %}
+
+                <!-- Review Form -->
+                <h4>Submit Your Review</h4>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_rating">{{ review_form.rating.label }}</label>
+                        {{ review_form.rating }}  <!-- This will render the select dropdown for rating -->
+                        {% if review_form.rating.errors %}
+                            <div class="text-danger">{{ review_form.rating.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_comment">{{ review_form.comment.label }}</label>
+                        {{ review_form.comment }}  <!-- This will render the textarea for the comment -->
+                        {% if review_form.comment.errors %}
+                            <div class="text-danger">{{ review_form.comment.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" name="review" class="btn btn-primary">Submit Review</button>
+                </form>
+                <br>
+
+                <!-- Support Ticket Form -->
+                <h4>Any problems with this product? Submit a Support Ticket right here!</h4>
+                <form method="POST" action="{% url 'core:support_ticket' %}">
+                    {% csrf_token %}
+                    {{ support_ticket_form.as_p }}  <!-- This will render the support ticket form fields -->
+                    {% if support_ticket_form.errors %}
+                        <div class="text-danger">
+                            {% for field in support_ticket_form %}
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in support_ticket_form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <input type="hidden" name="item_slug" value="{{ object.slug }}">  <!-- Include the slug -->
+                    <button type="submit" class="btn btn-primary">Submit Ticket</button> 
+                </form>
+            </div>
+        </div>
+        <!-- End of Customer Reviews and Forms -->
+
+        <!-- Additional Product Images or Information -->
+        <div class="row wow fadeIn">
+            <div class="col-lg-4 col-md-12 mb-4">
+                <img src="{% static 'img/random-1.jpg' %}" class="img-fluid" alt="">
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <img src="{% static 'img/random-2.jpg' %}" class="img-fluid" alt="">
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <img src="{% static 'img/random-3.jpg' %}" class="img-fluid" alt="">
+            </div>
+        </div>
+    </div>
+</main>
+
+{% endblock content %}

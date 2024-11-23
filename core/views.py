@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, reverse
+from django.shortcuts import redirect, reverse
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.generic import ListView, DetailView, View
@@ -52,6 +53,28 @@ def is_valid_form(values):
             valid = False
     return valid
 
+
+def search(request):
+    query = request.GET.get('query', '')
+    results = Item.objects.filter(title__icontains=query) if query else []
+    context = {
+        'results': results,
+        'query': query
+    }
+    return render(request, 'search.html', context) 
+
+def add_to_wishlist(self, user):
+        """Add this item to the user's wishlist."""
+        wishlist, created = Wishlist.objects.get_or_create(user=user)
+        WishlistItem.objects.get_or_create(wishlist=wishlist, item=self)
+
+def remove_from_wishlist(self, user):
+    """Remove this item from the user's wishlist."""
+    wishlist = Wishlist.objects.filter(user=user).first()
+    if wishlist:
+        wishlist_item = WishlistItem.objects.filter(wishlist=wishlist, item=self).first()
+        if wishlist_item:
+            wishlist_item.delete()
 
 def search(request):
     query = request.GET.get('query', '')
@@ -411,6 +434,7 @@ def payment_failed_view(request):
 class HomeView(ListView):
     model = Item
     paginate_by = 8
+    paginate_by = 8
     template_name = "home.html"
 
     def get_context_data(self, **kwargs):
@@ -590,6 +614,7 @@ def remove_single_item_from_cart(request, slug):
             return redirect("core:product", slug=slug)
     else:
         messages.info(request, "You do not have an active order")
+        return redirect("core:products", slug=slug)
         return redirect("core:products", slug=slug)
 
 

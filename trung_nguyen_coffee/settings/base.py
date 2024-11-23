@@ -19,9 +19,13 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'crispy_forms',
+    'crispy_bootstrap4',
     'django_countries',
-
-    'core'
+    'integration',
+    'paypal.standard.ipn',
+    'paypalrestsdk',
+    'rest_framework',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -32,9 +36,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
-ROOT_URLCONF = 'djecommerce.urls'
+ROOT_URLCONF = 'trung_nguyen_coffee.urls'
 
 TEMPLATES = [
     {
@@ -52,7 +57,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'djecommerce.wsgi.application'
+WSGI_APPLICATION = 'trung_nguyen_coffee.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -80,3 +85,26 @@ LOGIN_REDIRECT_URL = '/'
 # CRISPY FORMS
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'  # e.g., smtp.gmail.com for Gmail
+EMAIL_PORT = 25  # Current Local SMTP is listening on port 25 (default)
+EMAIL_USE_TLS = False  # or EMAIL_USE_SSL = True
+EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = ''  # Leave empty if no authentication is required
+EMAIL_HOST_PASSWORD = ''  # Leave empty if no authentication is required
+DEFAULT_FROM_EMAIL = 'admin@localhost'  # Default sender email
+
+PAYPAL_TEST = True
+PAYPAL_RECEIVER_EMAIL = "sb-4aqtc34262578@business.example.com"         # where cash is paid into   
+
+# PAYPAL_PUBLIC_KEY = config('PAYPAL_TEST_PUBLIC_KEY')
+# PAYPAL_SECRET_KEY = config('PAYPAL_TEST_SECRET_KEY')
+
+PAYPAL_CLIENT_ID = 'ARiIB8YoMtuIDxMHE9Khyf-tGskCTx3ZFUX1HcZt0OMfvosArfP8UGeTYWQg825Bc-dlqVI6raRqoaWE'
+PAYPAL_CLIENT_SECRET = 'EJvWX4jstlLNwwde1ixX8lHjL7dxESuVwlNvnoiZAKhKeBufcDH5GJ-8nQ7ddCyYlvhPNajTZPy45lB5'
+PAYPAL_MODE = 'sandbox'
+
+PAYPAL_BASE_URL= 'https://api-m.sandbox.paypal.com' #if in production use https://api.paypal.com 

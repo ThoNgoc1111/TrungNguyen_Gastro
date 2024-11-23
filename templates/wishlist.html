@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Your Wishlist</h1>
+    {% if wishlist_items %}
+        <ul class="list-group">
+            {% for wishlist_item in wishlist_items %}
+                <li class="list-group-item">
+                    <a href="{% url 'core:product' wishlist_item.item.slug %}"><h5>{{ wishlist_item.item.title }}</h5></a>
+                    <p>Price: ${{ wishlist_item.item.price }}</p>
+                    <form method="POST" action="{% url 'core:remove_from_wishlist' wishlist_item.item.slug %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Remove from Wishlist</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Your wishlist is empty. Add a wishlist now!</p>
+    {% endif %}
+</div>
+{% endblock content %}

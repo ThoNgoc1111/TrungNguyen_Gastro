@@ -1,7 +1,7 @@
 from .base import *
 
 DEBUG = config('DEBUG', cast=bool)
-ALLOWED_HOSTS = ['ip-address', 'www.your-website.com']
+ALLOWED_HOSTS = ['ip-address', 'www.tncoffee-website.com']
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -21,5 +21,8 @@ DATABASES = {
     }
 }
 
-STRIPE_PUBLIC_KEY = config('STRIPE_LIVE_PUBLIC_KEY')
-STRIPE_SECRET_KEY = config('STRIPE_LIVE_SECRET_KEY')
+# PAYPAL_PUBLIC_KEY = config('PAYPAL_LIVE_PUBLIC_KEY')
+# PAYPAL_SECRET_KEY = config('PAYPAL_LIVE_SECRET_KEY')
+
+# PAYPAL_CLIENT_ID = config('YOUR_PAYPAL_CLIENT_ID')
+# PAYPAL_CLIENT_SECRET = config('YOUR_PAYPAL_CLIENT_SECRET')

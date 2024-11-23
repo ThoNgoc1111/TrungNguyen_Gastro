@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+    <h3>Your Support Ticket Details</h3>
+        {% for ticket in support_tickets %}
+            <div class="ticket">
+                <strong>{{ ticket.user.username }}</strong>
+                <p><strong>Subject:</strong> {{ ticket.subject }}</p>
+                <p><strong>Message:</strong> {{ ticket.message }}</p>
+                <small>Submitted on {{ ticket.timestamp }}</small>
+                {% if ticket.is_resolved %}
+                    <p><strong>Status:</strong> Resolved</p>
+                {% else %}
+                    <p><strong>Status:</strong> Unresolved</p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p>No support tickets submitted yet.</p>
+        {% endfor %}
+</div>
+
+{% endblock content %}
+

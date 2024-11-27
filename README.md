@@ -19,7 +19,7 @@ As shown in techinical documentation
 As shown in techinical documentation
 Guidelines for contributing to the project.
 
-License
+### License
 This project is licensed under the MIT License.
 
 Contact Information
